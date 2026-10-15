@@ -1,0 +1,6 @@
+# GROUP_CONCAT does not define the order of the values.
+# Spec: any order is correct, so engines may legitimately disagree here.
+# The result is a plain literal even though some names have language tags.
+PREFIX ex: <http://example.org/>
+SELECT (GROUP_CONCAT(?name; separator=", ") AS ?names)
+WHERE { ?person a ex:Person ; ex:name ?name }

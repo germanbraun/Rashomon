@@ -1,0 +1,7 @@
+# String functions on language-tagged literals.
+# Spec: UCASE keeps the language tag; CONCAT with a plain "!" returns a
+# plain literal; STRLEN is an xsd:integer; LANGMATCHES("en-gb", "en") is true.
+PREFIX ex: <http://example.org/>
+SELECT ?name (UCASE(?name) AS ?upper) (CONCAT(?name, "!") AS ?shout)
+       (STRLEN(?name) AS ?length) (LANGMATCHES(LANG(?name), "en") AS ?english)
+WHERE { ex:ana ex:name ?name }

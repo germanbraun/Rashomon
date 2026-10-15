@@ -1,0 +1,6 @@
+# ex:dave is a Person only in the named graph <http://example.org/graph/extra>.
+# Spec: the content of the default graph is up to the service. Engines whose
+# default graph is the union of all graphs count 4, the others 3.
+PREFIX ex: <http://example.org/>
+SELECT (COUNT(*) AS ?people)
+WHERE { ?person a ex:Person }

@@ -1,0 +1,6 @@
+# The data states bob's name twice: as "Bob" and as "Bob"^^xsd:string.
+# Spec (RDF 1.1): both are the same literal, so the store holds one triple.
+# Expected: one row, datatype xsd:string. RDF 1.0-style engines return two.
+PREFIX ex: <http://example.org/>
+SELECT ?name (DATATYPE(?name) AS ?datatype)
+WHERE { ex:bob ex:name ?name }

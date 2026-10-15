@@ -1,0 +1,10 @@
+# A FILTER only sees the variables of its own group. In the inner group
+# { FILTER(...) } the variable ?age is unbound, the filter is an error,
+# and the group has no solutions.
+# Spec: no rows at all. Engines that push the filter outwards return ana.
+PREFIX ex: <http://example.org/>
+SELECT ?person ?age
+WHERE {
+  ?person ex:age ?age .
+  { FILTER(?age > 18) }
+}

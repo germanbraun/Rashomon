@@ -1,0 +1,75 @@
+# Five SPARQL engines, each loaded with the same data/data.nq: Fuseki, Virtuoso
+# and QLever with their own loaders, Oxigraph and GraphDB over HTTP. Start with `docker compose up -d` (from this directory) and run
+# `rashomon run rashomon.yaml` once all of them answer.
+#
+# Every engine keeps its default settings, except that GraphDB runs without
+# inference. Default-graph behaviour is deliberately left as each engine
+# ships it: that is one of the things being compared.
+
+services:
+  fuseki:
+    # In-memory dataset; no official multi-arch image, so this runs emulated on ARM.
+    image: stain/jena-fuseki:5.1.0
+    platform: linux/amd64
+    command: ["/jena-fuseki/fuseki-server", "--file=/data/data.nq", "/ds"]
+    volumes: ["./data:/data:ro"]
+    ports: ["3030:3030"]
+
+  oxigraph:
+    # In-memory store, loaded over HTTP by oxigraph-load.
+    image: ghcr.io/oxigraph/oxigraph:0.4.11
+    command: ["serve", "--bind", "0.0.0.0:7878"]
+    ports: ["7878:7878"]
+
+  oxigraph-load:
+    # PUT replaces the whole store, so running this again doesn't duplicate data.
+    image: curlimages/curl:8.10.1
+    command: >-
+      -fsS --retry 30 --retry-connrefused --retry-delay 1
+      -X PUT -H "Content-Type: application/n-quads" --data-binary @/data/data.nq
+      http://oxigraph:7878/store
+    volumes: ["./data:/data:ro"]
+    depends_on: [oxigraph]
+
+  virtuoso:
+    image: openlink/virtuoso-opensource-7:7.2.14
+    environment:
+      DBA_PASSWORD: rashomon
+      VIRT_Parameters_DirsAllowed: "., ../vad, /data"
+    volumes:
+      - ./data:/data:ro
+      - ./engines/virtuoso-load.sql:/opt/virtuoso-opensource/initdb.d/load.sql:ro
+    ports: ["8890:8890"]
+
+  qlever:
+    image: adfreiburg/qlever:latest
+    user: root  # the index lives in a fresh named volume owned by root
+    working_dir: /data  # the image's entrypoint insists on this
+    command: >-
+      -c "qlever-index -i /index/ds -f /input/data.nq -F nq
+      && qlever-server -i /index/ds -p 7001"
+    volumes: ["./data:/input:ro", "qlever-index:/index"]
+    ports: ["7001:7001"]
+
+  graphdb:
+    image: ontotext/graphdb:10.8.13  # GraphDB 11 needs a license even for free use
+    environment:
+      GDB_HEAP_SIZE: 1g
+    ports: ["7201:7200"]  # 7200 is often taken by a local GraphDB
+
+  graphdb-load:
+    # Creates the repository (if missing), then PUT replaces all its statements,
+    # so running this again doesn't duplicate data.
+    image: curlimages/curl:8.10.1
+    entrypoint: ["sh", "-c"]
+    command:
+      - >-
+        until curl -fsS -o /dev/null http://graphdb:7200/rest/repositories; do sleep 2; done;
+        curl -sS -o /dev/null -F config=@/config/graphdb-repo.ttl http://graphdb:7200/rest/repositories;
+        curl -fsS -X PUT -H "Content-Type: application/n-quads" --data-binary @/data/data.nq
+        http://graphdb:7200/repositories/rashomon/statements
+    volumes: ["./data:/data:ro", "./engines/graphdb-repo.ttl:/config/graphdb-repo.ttl:ro"]
+    depends_on: [graphdb]
+
+volumes:
+  qlever-index:

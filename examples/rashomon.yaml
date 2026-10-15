@@ -1,0 +1,55 @@
+# Endpoints started by docker-compose.yml, and queries that probe places
+# where SPARQL engines are known to disagree. Each .rq file explains what
+# the spec says the answer should be.
+
+settings:
+  timeout: 30
+  decimal_places: 6
+
+endpoints:
+  - name: fuseki
+    url: http://localhost:3030/ds/query
+  - name: oxigraph
+    url: http://localhost:7878/query
+  - name: virtuoso
+    url: http://localhost:8890/sparql
+  - name: qlever
+    url: http://localhost:7001/
+  - name: graphdb
+    url: http://localhost:7201/repositories/rashomon
+
+queries:
+  - id: sum-avg-mixed
+    file: queries/sum-avg-mixed.rq
+    description: SUM/AVG over integer, decimal and double
+  - id: avg-with-string
+    file: queries/avg-with-string.rq
+    description: AVG when one value is a string
+  - id: integer-division
+    file: queries/integer-division.rq
+    description: AVG and division over integers
+  - id: filter-in-optional
+    file: queries/filter-in-optional.rq
+    description: FILTER inside OPTIONAL
+  - id: filter-scope
+    file: queries/filter-scope.rq
+    description: FILTER in a nested group can't see outer variables
+  - id: plain-vs-xsd-string
+    file: queries/plain-vs-xsd-string.rq
+    description: '"Bob" and "Bob"^^xsd:string are the same literal'
+  - id: language-tags
+    file: queries/language-tags.rq
+    description: string functions on language-tagged literals
+  - id: distinct-count
+    file: queries/distinct-count.rq
+    description: COUNT DISTINCT over blank nodes
+  - id: group-concat-order
+    file: queries/group-concat-order.rq
+    description: GROUP_CONCAT order is undefined
+  - id: default-graph
+    file: queries/default-graph.rq
+    description: is the default graph the union of all graphs?
+  - id: order-by-mixed
+    file: queries/order-by-mixed.rq
+    description: ORDER BY over mixed numbers and a string
+    order_sensitive: true

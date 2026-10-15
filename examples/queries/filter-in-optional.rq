@@ -1,0 +1,9 @@
+# FILTER inside OPTIONAL is part of the left join: it removes the optional
+# match, not the person.
+# Spec: ana 30, bob UNBOUND, carl UNBOUND.
+PREFIX ex: <http://example.org/>
+SELECT ?person ?age
+WHERE {
+  ?person a ex:Person .
+  OPTIONAL { ?person ex:age ?age FILTER(?age >= 18) }
+}

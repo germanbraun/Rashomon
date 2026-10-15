@@ -1,0 +1,19 @@
+<http://example.org/item1> <http://example.org/price> "10"^^<http://www.w3.org/2001/XMLSchema#integer> .
+<http://example.org/item2> <http://example.org/price> "2.5"^^<http://www.w3.org/2001/XMLSchema#decimal> .
+<http://example.org/item3> <http://example.org/price> "1.5E0"^^<http://www.w3.org/2001/XMLSchema#double> .
+<http://example.org/item4> <http://example.org/price> "free" .
+<http://example.org/ana> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://example.org/Person> .
+<http://example.org/ana> <http://example.org/name> "Ana"@es .
+<http://example.org/ana> <http://example.org/name> "Anna"@en-GB .
+<http://example.org/ana> <http://example.org/age> "30"^^<http://www.w3.org/2001/XMLSchema#integer> .
+<http://example.org/bob> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://example.org/Person> .
+<http://example.org/bob> <http://example.org/name> "Bob" .
+<http://example.org/bob> <http://example.org/name> "Bob"^^<http://www.w3.org/2001/XMLSchema#string> .
+<http://example.org/bob> <http://example.org/age> "17"^^<http://www.w3.org/2001/XMLSchema#integer> .
+<http://example.org/carl> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://example.org/Person> .
+<http://example.org/carl> <http://example.org/name> "Carl" .
+_:note1 <http://example.org/tag> "draft" .
+_:note2 <http://example.org/tag> "draft" .
+_:note2 <http://example.org/tag> "urgent" .
+<http://example.org/dave> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://example.org/Person> <http://example.org/graph/extra> .
+<http://example.org/dave> <http://example.org/name> "Dave" <http://example.org/graph/extra> .

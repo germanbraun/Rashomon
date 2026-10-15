@@ -1,0 +1,6 @@
+# SUM and AVG over an integer, a decimal and a double.
+# Spec: numeric type promotion makes both results xsd:double
+# (SUM = 14.0E0, AVG = 4.666...E0).
+PREFIX ex: <http://example.org/>
+SELECT (SUM(?price) AS ?sum) (AVG(?price) AS ?avg)
+WHERE { ?item ex:price ?price FILTER(isNumeric(?price)) }

@@ -1,0 +1,6 @@
+# AVG over values that include the plain string "free".
+# Spec: adding a string raises an error, so the aggregate is an error and
+# ?avg is unbound, but the (single) group still produces one row.
+PREFIX ex: <http://example.org/>
+SELECT (AVG(?price) AS ?avg) (COUNT(?price) AS ?n)
+WHERE { ?item ex:price ?price }

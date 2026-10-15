@@ -1,0 +1,7 @@
+# ORDER BY over numbers of different datatypes plus a plain string.
+# Spec: numbers are ordered by value (1.5, 2.5, 10), but comparing a number
+# with "free" is an error, so where "free" ends up is not defined.
+PREFIX ex: <http://example.org/>
+SELECT ?price
+WHERE { ?item ex:price ?price }
+ORDER BY ?price

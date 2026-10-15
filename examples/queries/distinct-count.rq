@@ -1,0 +1,5 @@
+# Two blank-node notes: one tagged "draft", the other "draft" and "urgent".
+# Spec: 3 matches, 2 distinct notes, 2 distinct tags.
+PREFIX ex: <http://example.org/>
+SELECT (COUNT(*) AS ?matches) (COUNT(DISTINCT ?note) AS ?notes) (COUNT(DISTINCT ?tag) AS ?tags)
+WHERE { ?note ex:tag ?tag }
