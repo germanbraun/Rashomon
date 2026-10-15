@@ -1,0 +1,10 @@
+# The default engines plus those that need a license. Start them with
+#   docker compose --profile licensed up -d
+# after putting the license files in licenses/ (see licenses/README.md).
+
+extends: rashomon.yaml
+
+endpoints:
+  - name: stardog
+    url: http://localhost:5820/rashomon/query
+    headers: {Authorization: "Basic YWRtaW46YWRtaW4="}  # admin:admin, Stardog's default login

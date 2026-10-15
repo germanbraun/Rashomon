@@ -20,6 +20,10 @@ Example:
       - id: count-all
         query: SELECT (COUNT(*) AS ?n) WHERE { ?s ?p ?o }
         order_sensitive: false       # optional, compare row order too
+
+A config can build on another one: `extends: rashomon.yaml` (relative to
+this file) takes its settings, endpoints and queries, then adds this file's
+endpoints and queries and overrides its settings.
 """
 
 from __future__ import annotations
@@ -61,17 +65,10 @@ class Config:
 
 
 def load_config(path: Path) -> Config:
-    try:
-        doc = yaml.safe_load(path.read_text(encoding="utf-8"))
-    except (OSError, yaml.YAMLError) as exc:
-        raise ConfigError(f"Can't read {path}: {exc}") from exc
-    if not isinstance(doc, dict):
-        raise ConfigError(f"{path}: expected a mapping with 'endpoints' and 'queries'")
+    settings, endpoints, queries = _load_parts(path, seen=set())
 
-    settings = doc.get("settings") or {}
-    endpoints = [_endpoint(item, i) for i, item in enumerate(_list(doc, "endpoints"))]
-    queries = [_query(item, i, path.parent) for i, item in enumerate(_list(doc, "queries"))]
-
+    if not endpoints or not queries:
+        raise ConfigError("'endpoints' and 'queries' must be non-empty lists")
     _no_duplicates("endpoint name", [e.name for e in endpoints])
     _no_duplicates("query id", [q.id for q in queries])
     if len(endpoints) < 2:
@@ -85,10 +82,36 @@ def load_config(path: Path) -> Config:
     )
 
 
+def _load_parts(path: Path, seen: set[Path]) -> tuple[dict, list[Endpoint], list[Query]]:
+    """Settings, endpoints and queries of one file, after those of the file it extends."""
+    if path.resolve() in seen:
+        raise ConfigError(f"{path}: 'extends' loops back to a file already being read")
+    seen.add(path.resolve())
+
+    try:
+        doc = yaml.safe_load(path.read_text(encoding="utf-8"))
+    except (OSError, yaml.YAMLError) as exc:
+        raise ConfigError(f"Can't read {path}: {exc}") from exc
+    if not isinstance(doc, dict):
+        raise ConfigError(f"{path}: expected a mapping with 'endpoints' and 'queries'")
+
+    settings: dict = {}
+    endpoints: list[Endpoint] = []
+    queries: list[Query] = []
+    if "extends" in doc:
+        settings, endpoints, queries = _load_parts(path.parent / str(doc["extends"]), seen)
+
+    settings = {**settings, **(doc.get("settings") or {})}
+    endpoints += [_endpoint(item, i) for i, item in enumerate(_list(doc, "endpoints"))]
+    # Query files are relative to the config file that lists them.
+    queries += [_query(item, i, path.parent) for i, item in enumerate(_list(doc, "queries"))]
+    return settings, endpoints, queries
+
+
 def _list(doc: dict, key: str) -> list:
-    value = doc.get(key)
-    if not isinstance(value, list) or not value:
-        raise ConfigError(f"'{key}' must be a non-empty list")
+    value = doc.get(key) or []
+    if not isinstance(value, list):
+        raise ConfigError(f"'{key}' must be a list")
     return value
 
 

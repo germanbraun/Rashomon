@@ -71,5 +71,39 @@ services:
     volumes: ["./data:/data:ro", "./engines/graphdb-repo.ttl:/config/graphdb-repo.ttl:ro"]
     depends_on: [graphdb]
 
+  # --- Opt-in engines that need a license: `docker compose --profile licensed up -d`
+  # and `rashomon run rashomon-licensed.yaml`. See licenses/README.md.
+
+  stardog:
+    profiles: [licensed]
+    image: stardog/stardog:12.2.0  # first release with an arm64 image
+    environment:
+      STARDOG_SERVER_JAVA_ARGS: -Xms1g -Xmx1g -XX:MaxDirectMemorySize=1g
+    entrypoint: ["sh", "-c"]
+    command:
+      - >-
+        if [ ! -f /licenses/stardog-license-key.bin ]; then
+        echo "No license: copy it to examples/licenses/stardog-license-key.bin"; exit 1; fi;
+        cp /licenses/stardog-license-key.bin /var/opt/stardog/
+        && exec /opt/stardog/bin/stardog-admin server start --foreground --port 5820 --home /var/opt/stardog
+    volumes: ["./data:/data:ro", "./licenses:/licenses:ro"]
+    ports: ["5820:5820"]
+
+  stardog-load:
+    # Drops and recreates the database, so running this again doesn't duplicate data.
+    # The server reads /data/data.nq from its own mount; default login admin/admin.
+    profiles: [licensed]
+    image: stardog/stardog:12.2.0
+    entrypoint: ["sh", "-c"]
+    command:
+      - >-
+        tries=0;
+        until /opt/stardog/bin/stardog-admin --server http://stardog:5820 server status > /dev/null 2>&1; do
+        tries=$$((tries + 1)); [ $$tries -gt 90 ] && echo "Stardog didn't start, see its log" && exit 1;
+        sleep 2; done;
+        /opt/stardog/bin/stardog-admin --server http://stardog:5820 db drop rashomon > /dev/null 2>&1;
+        /opt/stardog/bin/stardog-admin --server http://stardog:5820 db create -n rashomon /data/data.nq
+    depends_on: [stardog]
+
 volumes:
   qlever-index:

@@ -35,6 +35,8 @@ image, so on Apple Silicon it runs emulated and is slow on its first query.
 ## Config
 
 ```yaml
+extends: base.yaml     # optional: inherit another config's settings, endpoints and queries
+
 settings:              # optional
   timeout: 30          # seconds per query and endpoint
   decimal_places: 6    # numbers are rounded to this before comparing
@@ -116,9 +118,33 @@ probe the known trouble spots, and a `docker-compose.yml` that loads the same
 file into every engine. Every engine keeps its default settings, including what
 its default graph means, except that GraphDB runs without inference. GraphDB 11
 needs a license even for free use, so the compose file uses GraphDB 10.8, on
-host port 7201 because 7200 is often taken by a local GraphDB. RDFox also needs
-a license and isn't included; add it to `rashomon.yaml` if you have one. All
-five engines together need about 2.5 GB of Docker memory.
+host port 7201 because 7200 is often taken by a local GraphDB. All five engines
+together need about 2.5 GB of Docker memory.
+
+### Engines that need a license
+
+Stardog is wired up but opt-in, because its server won't start without a
+license file. Copy the license to `examples/licenses/stardog-license-key.bin`
+(git ignores that directory), then:
+
+```bash
+docker compose --profile licensed up -d
+rashomon run rashomon-licensed.yaml
+```
+
+`rashomon-licensed.yaml` uses `extends: rashomon.yaml`, so it runs the same
+queries on the default engines plus Stardog. Any config can extend another
+this way: it inherits the settings, endpoints and queries, adds its own, and
+can override settings. Other licensed engines (RDFox, GraphDB 11) can be added
+the same way.
+
+### Engines not included
+
+- **Tentris**: the public image (`dicegroup/tentris_server:1.1.3`) is x86-only and
+  crashes under emulation on Apple Silicon. It also loads only N-Triples, so it
+  can't hold named graphs.
+- **AnzoGraph**: free edition with an embedded license, but the image is x86-only.
+- **FalkorDB**: a property-graph database queried with Cypher, not SPARQL.
 
 To compare engines on your own data, replace `data/data.nq` (any N-Quads
 file), run `docker compose down -v && docker compose up -d`, and write your
