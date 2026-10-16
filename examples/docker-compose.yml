@@ -1,5 +1,5 @@
-# Five SPARQL engines, each loaded with the same data/data.nq: Fuseki, Virtuoso
-# and QLever with their own loaders, Oxigraph and GraphDB over HTTP. Start with `docker compose up -d` (from this directory) and run
+# Six SPARQL engines, each loaded with the same data/data.nq: Fuseki, Virtuoso
+# and QLever with their own loaders, Oxigraph, GraphDB and AnzoGraph over HTTP. Start with `docker compose up -d` (from this directory) and run
 # `rashomon run rashomon.yaml` once all of them answer.
 #
 # Every engine keeps its default settings, except that GraphDB runs without
@@ -70,6 +70,27 @@ services:
         http://graphdb:7200/repositories/rashomon/statements
     volumes: ["./data:/data:ro", "./engines/graphdb-repo.ttl:/config/graphdb-repo.ttl:ro"]
     depends_on: [graphdb]
+
+  anzograph:
+    # Free edition, license embedded in the image. x86-only, so emulated on ARM.
+    # Its own startup files live in /data, so the dataset is mounted at /rdf.
+    image: cambridgesemantics/anzograph:3.5.0
+    platform: linux/amd64
+    volumes: ["./data:/rdf:ro"]
+    ports: ["7070:7070"]  # the database's built-in SPARQL endpoint
+
+  anzograph-load:
+    # DROP ALL first, so running this again doesn't duplicate blank nodes.
+    # The server reads /rdf/data.nq from its own mount.
+    image: curlimages/curl:8.10.1
+    entrypoint: ["sh", "-c"]
+    command:
+      - >-
+        until curl -fsS -o /dev/null --data-urlencode "query=ASK {}" http://anzograph:7070/sparql;
+        do sleep 3; done;
+        curl -fsS -o /dev/null --data-urlencode "update=DROP ALL" http://anzograph:7070/sparql
+        && curl -fsS -o /dev/null --data-urlencode "update=LOAD <file:/rdf/data.nq>" http://anzograph:7070/sparql
+    depends_on: [anzograph]
 
   # --- Opt-in engines that need a license: `docker compose --profile licensed up -d`
   # and `rashomon run rashomon-licensed.yaml`. See licenses/README.md.

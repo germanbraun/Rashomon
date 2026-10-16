@@ -17,6 +17,8 @@ endpoints:
     url: http://localhost:7001/
   - name: graphdb
     url: http://localhost:7201/repositories/rashomon
+  - name: anzograph
+    url: http://localhost:7070/sparql
 
 queries:
   - id: sum-avg-mixed

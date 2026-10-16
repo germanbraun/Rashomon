@@ -24,13 +24,16 @@ python3 -m venv .venv && source .venv/bin/activate
 pip install -e ".[dev]"
 
 cd examples
-docker compose up -d          # Fuseki, Oxigraph, Virtuoso, QLever, GraphDB
+docker compose up -d          # Fuseki, Oxigraph, Virtuoso, QLever, GraphDB, AnzoGraph
 rashomon run rashomon.yaml
 ```
 
 The engines need up to a minute to load the data. Oxigraph keeps its data in
-memory, so if it restarts, run `docker compose up -d` again to reload it. Fuseki has no official ARM
-image, so on Apple Silicon it runs emulated and is slow on its first query.
+memory, so if it restarts, run `docker compose up -d` again to reload it.
+Fuseki and AnzoGraph have no ARM images, so on Apple Silicon they run emulated.
+Fuseki is slow on its first query. AnzoGraph compiles each query the first
+time it sees it, which under emulation takes several seconds per query; later
+runs are fast.
 
 ## Config
 
@@ -63,11 +66,11 @@ for `application/sparql-results+json`. SELECT and ASK are supported.
 ## Reading the report
 
 ```
-query                verdict           fuseki    oxigraph  virtuoso  qlever    graphdb
-integer-division     DISAGREE          A 0.163s  A 0.014s  B 0.014s  A 0.033s  A 0.037s
-filter-scope         DISAGREE          A 0.102s  A 0.005s  B 0.005s  A 0.010s  C 0.042s
-distinct-count       datatypes differ  A 0.078s  A 0.019s  A 0.007s  B 0.008s  A 0.012s
-default-graph        DISAGREE          A 0.061s  A 0.005s  B 0.008s  C 0.007s  B 0.014s
+query                verdict           fuseki    oxigraph  virtuoso  qlever    graphdb   anzograph
+integer-division     DISAGREE          A 0.198s  A 0.019s  B 0.021s  A 0.014s  A 0.105s  C 10.644s
+filter-scope         DISAGREE          A 0.220s  A 0.004s  B 0.015s  A 0.016s  C 0.116s  A 5.136s
+distinct-count       datatypes differ  A 0.220s  A 0.008s  A 0.021s  B 0.018s  A 0.213s  C 13.013s
+default-graph        DISAGREE          A 0.191s  A 0.005s  B 0.016s  C 0.016s  B 0.085s  D 2.931s
 ```
 
 See [examples/sample-report.md](examples/sample-report.md) for a full report.
@@ -118,8 +121,9 @@ probe the known trouble spots, and a `docker-compose.yml` that loads the same
 file into every engine. Every engine keeps its default settings, including what
 its default graph means, except that GraphDB runs without inference. GraphDB 11
 needs a license even for free use, so the compose file uses GraphDB 10.8, on
-host port 7201 because 7200 is often taken by a local GraphDB. All five engines
-together need about 2.5 GB of Docker memory.
+host port 7201 because 7200 is often taken by a local GraphDB. AnzoGraph is
+the free edition, whose license is embedded in the image. All six engines
+together need about 3 GB of Docker memory.
 
 ### Engines that need a license
 
@@ -143,7 +147,6 @@ the same way.
 - **Tentris**: the public image (`dicegroup/tentris_server:1.1.3`) is x86-only and
   crashes under emulation on Apple Silicon. It also loads only N-Triples, so it
   can't hold named graphs.
-- **AnzoGraph**: free edition with an embedded license, but the image is x86-only.
 - **FalkorDB**: a property-graph database queried with Cypher, not SPARQL.
 
 To compare engines on your own data, replace `data/data.nq` (any N-Quads
